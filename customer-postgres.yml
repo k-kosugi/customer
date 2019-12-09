@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: customer-postgres-secret
+type: Opaque
+data:
+  rootpassword: aWJt
+  username: cmVkaGF0
+  password: b3BlbnNoaWZ0
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: customer-postgres
+  labels:
+    app: customer-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-postgres
+  serviceName: "customer-postgresql"
+  template:
+    metadata:
+      labels:
+        app: customer-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:12
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: POSTGRES_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: customer-postgres-secret
+                  key: rootpassword
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: customer-postgres-secret
+                  key: username
+            - name: POSTGRES_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: customer-postgres-secret
+                  key: password
+            - name: POSTGRES_DB
+              value: customer
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: customer-postgres-volume
+          ports:
+            - containerPort: 5432
+      volumes:
+        - name: customer-postgres-volume
+          persistentVolumeClaim:
+            claimName: customer-postgress-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-postgres-service
+spec:
+  type: ClusterIP
+  ports:
+    - name: "postgres-port"
+      protocol: "TCP"
+      port: 5432
+  selector:
+    app: customer-postgres

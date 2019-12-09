@@ -1,0 +1,7 @@
+FROM postgres:10
+EXPOSE 5432:5432
+ENV POSTGRES_USER=redhat
+ENV POSTGRES_PASSWORD=openshift
+ENV POSTGRES_DB=customer
+COPY ./sampledb.sql /docker-entrypoint-initdb.d/
+
